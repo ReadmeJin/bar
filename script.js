@@ -1,79 +1,98 @@
-// ---------Responsive-navbar-active-animation-----------
-function test() {
-  var tabsNewAnim = $("#navbarSupportedContent");
-  var selectorNewAnim = $("#navbarSupportedContent").find("li").length;
-  var activeItemNewAnim = tabsNewAnim.find(".active");
-  var activeWidthNewAnimHeight = activeItemNewAnim.innerHeight();
-  var activeWidthNewAnimWidth = activeItemNewAnim.innerWidth();
-  var itemPosNewAnimTop = activeItemNewAnim.position();
-  var itemPosNewAnimLeft = activeItemNewAnim.position();
-  $(".hori-selector").css({
-    top: itemPosNewAnimTop.top + "px",
-    left: itemPosNewAnimLeft.left + "px",
-    height: activeWidthNewAnimHeight + "px",
-    width: activeWidthNewAnimWidth + "px"
-  });
-  $("#navbarSupportedContent").on("click", "li", function (e) {
-    $("#navbarSupportedContent ul li").removeClass("active");
-    $(this).addClass("active");
-    var activeWidthNewAnimHeight = $(this).innerHeight();
-    var activeWidthNewAnimWidth = $(this).innerWidth();
-    var itemPosNewAnimTop = $(this).position();
-    var itemPosNewAnimLeft = $(this).position();
-    $(".hori-selector").css({
-      top: itemPosNewAnimTop.top + "px",
-      left: itemPosNewAnimLeft.left + "px",
-      height: activeWidthNewAnimHeight + "px",
-      width: activeWidthNewAnimWidth + "px"
-    });
-  });
+const navTabs = document.querySelector('nav.tabs')
+const navTabsItems = navTabs.querySelectorAll('a')
+const navTabsFirstItem = [...navTabsItems].at(0)
+const navTabsLastItem = [...navTabsItems].at(-1)
+
+// store max overall width of items plus min width of an item
+const itemsWidth = Math.ceil(navTabsLastItem.getBoundingClientRect().right - navTabsFirstItem.getBoundingClientRect().left)
+navTabs.setAttribute('data-items-width', itemsWidth)
+const itemMinWidth = navTabsLastItem.clientHeight
+
+// store max width of each item
+navTabsItems.forEach(item => {
+	// console.log(item)
+	item.setAttribute('data-max-width', item.clientWidth)
+})
+
+// check initial width and apply compact class if required
+if (navTabsLastItem.getBoundingClientRect().right >= navTabs.getBoundingClientRect().right) {
+	navTabs.classList.add('compact')
 }
-$(document).ready(function () {
-  setTimeout(function () {
-    test();
-  });
-});
-$(window).on("resize", function () {
-  setTimeout(function () {
-    test();
-  }, 500);
-});
-$(".navbar-toggler").click(function () {
-  $(".navbar-collapse").slideToggle(300);
-  setTimeout(function () {
-    test();
-  });
+
+
+
+// resize compact check
+const navTabsObserver = new ResizeObserver(
+	(entries, observer) => {
+		entries.forEach(entry => {
+			if (entry.target.classList.contains('compact') && entry.contentBoxSize[0].inlineSize >= entry.target.dataset.itemsWidth) {
+				entry.target.classList.remove('compact')
+			} else if (!entry.target.classList.contains('compact') && entry.contentBoxSize[0].inlineSize < entry.target.dataset.itemsWidth) {
+				entry.target.classList.add('compact')
+			}
+	})
+})
+
+navTabsObserver.observe(navTabs)
+
+
+
+// active tab change
+
+function maxWidth(width) {
+	return 'max-width: ' + width  + 'px'
+}
+
+navTabs.addEventListener('click', (e) => {
+	const changeTo = e.target
+	if (changeTo.tagName == 'A') {
+		const changeFrom = changeTo.parentNode.querySelector('.active')
+		
+		if (navTabs.classList.contains('compact')) {
+			// compact
+			const changeTime = parseFloat(getComputedStyle(changeTo).transitionDuration).toFixed(3)
+			const changeFromMaxWidth = changeFrom.dataset.maxWidth
+			const changeToMaxWidth = changeTo.dataset.maxWidth
+			
+			changeTo.setAttribute('style',maxWidth(itemMinWidth) )
+			changeTo.classList.add('active', 'transition');
+			changeFrom.setAttribute('style',maxWidth(changeFromMaxWidth) )
+			changeFrom.classList.remove('active');
+			changeFrom.classList.add('transition');
+
+			changeTo.offsetWidth
+			changeFrom.offsetWidth
+			// forces browser to recognise change with regard to transitions
+
+			changeTo.setAttribute('style',maxWidth(changeToMaxWidth) )
+			changeFrom.setAttribute('style',maxWidth(itemMinWidth) )
+
+			setTimeout(() => { 
+				changeTo.classList.remove('transition');
+				changeTo.setAttribute('style','')
+				changeFrom.classList.remove('transition');
+				changeFrom.setAttribute('style','')
+			}, changeTime * 1000);
+			
+		} else {
+			// default
+			changeFrom.classList.remove('active')
+			changeTo.classList.add('active')
+		}
+		
+	}
+})
+
+
+
+// theme control
+
+document.getElementById('theme').addEventListener('change', (e) => {
+	document.querySelector('[data-theme]').setAttribute('data-theme', e.target.value)
 });
 
-// --------------add active class-on another-page move----------
-jQuery(document).ready(function ($) {
-  // Get current path and find target link
-  var path = window.location.pathname.split("/").pop();
+// width control
 
-  // Account for home page with empty path
-  if (path == "") {
-    path = "index.html";
-  }
-
-  var target = $('#navbarSupportedContent ul li a[href="' + path + '"]');
-  // Add active class to target link
-  target.parent().addClass("active");
+document.getElementById('width').addEventListener('change', (e) => {
+	document.querySelector('[data-width]').setAttribute('data-width', e.target.value)
 });
-
-// Add active class on another page linked
-// ==========================================
-// $(window).on('load',function () {
-//     var current = location.pathname;
-//     console.log(current);
-//     $('#navbarSupportedContent ul li a').each(function(){
-//         var $this = $(this);
-//         // if the current path is like this link, make it active
-//         if($this.attr('href').indexOf(current) !== -1){
-//             $this.parent().addClass('active');
-//             $this.parents('.menu-submenu').addClass('show-dropdown');
-//             $this.parents('.menu-submenu').parent().addClass('active');
-//         }else{
-//             $this.parent().removeClass('active');
-//         }
-//     })
-// });
